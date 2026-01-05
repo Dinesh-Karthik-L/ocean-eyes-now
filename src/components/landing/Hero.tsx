@@ -1,9 +1,18 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { MapPin, AlertTriangle, Users, Shield } from 'lucide-react';
-import { WavesIcon } from '@/components/icons/HazardIcons';
+import { useLanguage } from '@/i18n/LanguageContext';
 
 export const Hero = () => {
+  const { t, language } = useLanguage();
+
+  const stats = [
+    { icon: MapPin, value: '156+', label: language === 'hi' ? 'सक्रिय रिपोर्ट' : 'Active Reports' },
+    { icon: AlertTriangle, value: '3', label: language === 'hi' ? 'सक्रिय हॉटस्पॉट' : 'Active Hotspots' },
+    { icon: Users, value: '2.5K+', label: language === 'hi' ? 'समुदाय सदस्य' : 'Community Members' },
+    { icon: Shield, value: '89%', label: language === 'hi' ? 'सत्यापित रिपोर्ट' : 'Verified Reports' },
+  ];
+
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Animated Background */}
@@ -48,21 +57,30 @@ export const Hero = () => {
               <span className="relative inline-flex rounded-full h-2 w-2 bg-success"></span>
             </span>
             <span className="text-sm font-medium text-primary-foreground">
-              Real-time Coastal Monitoring Active
+              {t.hero.badge}
             </span>
           </div>
 
           {/* Main Heading */}
           <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-display font-extrabold text-primary-foreground mb-6 leading-tight animate-fade-in" style={{ animationDelay: '0.1s' }}>
-            Protecting Coasts,
-            <br />
-            <span className="text-accent">Saving Lives</span>
+            {language === 'hi' ? (
+              <>
+                तटों की रक्षा,
+                <br />
+                <span className="text-accent">जीवन की रक्षा</span>
+              </>
+            ) : (
+              <>
+                Protecting Coasts,
+                <br />
+                <span className="text-accent">Saving Lives</span>
+              </>
+            )}
           </h1>
 
           {/* Description */}
           <p className="text-lg sm:text-xl text-primary-foreground/80 max-w-2xl mx-auto mb-10 leading-relaxed animate-fade-in" style={{ animationDelay: '0.2s' }}>
-            Crowdsourced ocean hazard reporting platform. Report dangers, track alerts, 
-            and help your community stay safe from tsunamis, storms, and coastal floods.
+            {t.hero.subtitle}
           </p>
 
           {/* CTA Buttons */}
@@ -70,7 +88,7 @@ export const Hero = () => {
             <Link to="/map">
               <Button variant="glass" size="xl" className="gap-3 min-w-[200px]">
                 <MapPin className="h-5 w-5" />
-                View Live Map
+                {t.hero.viewMap}
               </Button>
             </Link>
             <Link to="/report">
@@ -79,19 +97,14 @@ export const Hero = () => {
                 className="gap-3 min-w-[200px] bg-destructive hover:bg-destructive/90"
               >
                 <AlertTriangle className="h-5 w-5" />
-                Report Hazard
+                {t.hero.reportHazard}
               </Button>
             </Link>
           </div>
 
           {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8 animate-fade-in" style={{ animationDelay: '0.4s' }}>
-            {[
-              { icon: MapPin, value: '156+', label: 'Active Reports' },
-              { icon: AlertTriangle, value: '3', label: 'Active Hotspots' },
-              { icon: Users, value: '2.5K+', label: 'Community Members' },
-              { icon: Shield, value: '89%', label: 'Verified Reports' },
-            ].map((stat, index) => {
+            {stats.map((stat) => {
               const Icon = stat.icon;
               return (
                 <div

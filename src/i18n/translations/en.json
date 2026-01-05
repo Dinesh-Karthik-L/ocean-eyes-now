@@ -1,0 +1,179 @@
+{
+  "nav": {
+    "map": "Map",
+    "report": "Report",
+    "dashboard": "Dashboard",
+    "alerts": "Alerts",
+    "signIn": "Sign In",
+    "signOut": "Sign Out"
+  },
+  "hero": {
+    "badge": "Real-time Coastal Intelligence",
+    "title": "Protecting Coastal Communities Together",
+    "subtitle": "Report ocean hazards, receive real-time alerts, and help authorities respond faster to coastal emergencies.",
+    "reportHazard": "Report a Hazard",
+    "viewMap": "View Live Map",
+    "stats": {
+      "reports": "Reports Filed",
+      "coastline": "Coastline Monitored",
+      "responseTime": "Response Time"
+    }
+  },
+  "features": {
+    "title": "Comprehensive Coastal Safety Platform",
+    "subtitle": "Everything you need to report, monitor, and respond to ocean hazards",
+    "items": {
+      "reporting": {
+        "title": "Instant Hazard Reporting",
+        "description": "Report coastal hazards with GPS location, photos, and descriptions in seconds"
+      },
+      "map": {
+        "title": "Live Interactive Map",
+        "description": "View real-time hazard reports on an interactive map with hotspot detection"
+      },
+      "alerts": {
+        "title": "Smart Alert System",
+        "description": "Receive personalized alerts based on your location and hazard severity"
+      },
+      "offline": {
+        "title": "Offline Capable",
+        "description": "Report hazards even without internet - auto-syncs when connected"
+      },
+      "analytics": {
+        "title": "Trend Analysis",
+        "description": "Officials get insights on hazard patterns and high-risk zones"
+      },
+      "multilingual": {
+        "title": "Multilingual Support",
+        "description": "Available in multiple regional languages for wider accessibility"
+      }
+    }
+  },
+  "hazardTypes": {
+    "title": "Types of Hazards You Can Report",
+    "subtitle": "Help us monitor these coastal threats",
+    "types": {
+      "tsunami": "Tsunami",
+      "stormSurge": "Storm Surge",
+      "highWaves": "High Waves",
+      "flooding": "Coastal Flooding",
+      "abnormalTides": "Abnormal Tides",
+      "coastalDamage": "Coastal Damage"
+    }
+  },
+  "cta": {
+    "title": "Ready to Make a Difference?",
+    "subtitle": "Join thousands of coastal citizens reporting hazards and helping keep communities safe.",
+    "getStarted": "Get Started Now",
+    "learnMore": "Learn More"
+  },
+  "footer": {
+    "tagline": "Protecting coastal communities through crowdsourced intelligence and real-time hazard reporting.",
+    "quickLinks": "Quick Links",
+    "resources": "Resources",
+    "contact": "Contact",
+    "home": "Home",
+    "about": "About",
+    "help": "Help Center",
+    "guidelines": "Reporting Guidelines",
+    "privacy": "Privacy Policy",
+    "emergency": "Emergency Contacts",
+    "copyright": "© 2024 OceanWatch. All rights reserved.",
+    "madeWith": "Made with ❤️ for coastal safety"
+  },
+  "auth": {
+    "signIn": "Sign In",
+    "register": "Register",
+    "email": "Email",
+    "password": "Password",
+    "fullName": "Full Name",
+    "phone": "Phone (Optional)",
+    "signingIn": "Signing in...",
+    "creatingAccount": "Creating account...",
+    "createAccount": "Create Account",
+    "termsText": "By continuing, you agree to our",
+    "termsOfService": "Terms of Service",
+    "and": "and",
+    "privacyPolicy": "Privacy Policy",
+    "backToHome": "Back to home",
+    "welcomeBack": "Welcome back!",
+    "signedInSuccess": "You have been signed in successfully.",
+    "accountCreated": "Account Created!",
+    "welcomeMessage": "Welcome to OceanWatch. You can now report hazards and receive alerts."
+  },
+  "report": {
+    "title": "Report a Hazard",
+    "subtitle": "Help protect coastal communities by reporting ocean hazards you observe.",
+    "hazardType": "Hazard Type",
+    "selectHazard": "Select hazard type",
+    "location": "Location",
+    "detectLocation": "Detect My Location",
+    "detecting": "Detecting...",
+    "description": "Description",
+    "descriptionPlaceholder": "Describe what you observed...",
+    "severity": "Severity Level",
+    "media": "Photos/Videos",
+    "uploadMedia": "Upload Media",
+    "dragDrop": "or drag and drop",
+    "fileTypes": "PNG, JPG, MP4 up to 10MB",
+    "submit": "Submit Report",
+    "submitting": "Submitting...",
+    "guidelines": "Reporting Guidelines",
+    "guidelinesText": "Your report helps authorities respond to emergencies faster. Please provide accurate information and location details."
+  },
+  "dashboard": {
+    "title": "Situation Dashboard",
+    "subtitle": "Real-time overview of coastal hazard intelligence",
+    "totalReports": "Total Reports",
+    "activeHotspots": "Active Hotspots",
+    "verifiedReports": "Verified Reports",
+    "responseTime": "Avg Response",
+    "recentReports": "Recent Reports",
+    "socialFeed": "Social Intelligence",
+    "hazardTrends": "Hazard Trends",
+    "locationStats": "Location Statistics"
+  },
+  "map": {
+    "title": "Live Hazard Map",
+    "subtitle": "Real-time visualization of reported coastal hazards",
+    "legend": "Legend",
+    "hotspots": "Hotspots",
+    "reports": "Reports"
+  },
+  "alerts": {
+    "title": "Alert Center",
+    "subtitle": "Stay informed about coastal hazards in your area",
+    "active": "Active Alerts",
+    "history": "History",
+    "noAlerts": "No active alerts in your area"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "view": "View",
+    "close": "Close",
+    "search": "Search",
+    "filter": "Filter",
+    "all": "All",
+    "verified": "Verified",
+    "unverified": "Unverified",
+    "pending": "Pending"
+  },
+  "roles": {
+    "citizen": "Citizen",
+    "official": "Official",
+    "analyst": "Analyst",
+    "volunteer": "Volunteer"
+  },
+  "severity": {
+    "low": "Low",
+    "medium": "Medium",
+    "high": "High",
+    "critical": "Critical"
+  }
+}

@@ -17,6 +17,7 @@ import {
 import { toast } from '@/hooks/use-toast';
 import { Helmet } from 'react-helmet-async';
 import { useAuth } from '@/hooks/useAuth';
+import { useLanguage } from '@/i18n/LanguageContext';
 import { z } from 'zod';
 
 const emailSchema = z.string().email('Please enter a valid email address');
@@ -25,6 +26,7 @@ const passwordSchema = z.string().min(6, 'Password must be at least 6 characters
 const Login = () => {
   const navigate = useNavigate();
   const { user, signIn, signUp, isLoading: authLoading } = useAuth();
+  const { t, language } = useLanguage();
   
   const [isLoading, setIsLoading] = useState(false);
   const [loginEmail, setLoginEmail] = useState('');
@@ -51,7 +53,7 @@ const Login = () => {
     } catch (err) {
       if (err instanceof z.ZodError) {
         toast({
-          title: "Validation Error",
+          title: language === 'hi' ? 'सत्यापन त्रुटि' : 'Validation Error',
           description: err.errors[0].message,
           variant: "destructive",
         });
@@ -66,17 +68,19 @@ const Login = () => {
     if (error) {
       let message = error.message;
       if (message.includes('Invalid login credentials')) {
-        message = 'Invalid email or password. Please try again.';
+        message = language === 'hi' 
+          ? 'अमान्य ईमेल या पासवर्ड। कृपया पुनः प्रयास करें।'
+          : 'Invalid email or password. Please try again.';
       }
       toast({
-        title: "Sign In Failed",
+        title: language === 'hi' ? 'साइन इन विफल' : 'Sign In Failed',
         description: message,
         variant: "destructive",
       });
     } else {
       toast({
-        title: "Welcome back!",
-        description: "You have been signed in successfully.",
+        title: t.auth.welcomeBack,
+        description: t.auth.signedInSuccess,
       });
       navigate('/');
     }
@@ -90,11 +94,11 @@ const Login = () => {
       emailSchema.parse(registerEmail);
       passwordSchema.parse(registerPassword);
       if (!registerName.trim()) {
-        throw new Error('Please enter your full name');
+        throw new Error(language === 'hi' ? 'कृपया अपना पूरा नाम दर्ज करें' : 'Please enter your full name');
       }
     } catch (err) {
       toast({
-        title: "Validation Error",
+        title: language === 'hi' ? 'सत्यापन त्रुटि' : 'Validation Error',
         description: err instanceof z.ZodError ? err.errors[0].message : (err as Error).message,
         variant: "destructive",
       });
@@ -108,17 +112,19 @@ const Login = () => {
     if (error) {
       let message = error.message;
       if (message.includes('already registered')) {
-        message = 'This email is already registered. Please sign in instead.';
+        message = language === 'hi'
+          ? 'यह ईमेल पहले से पंजीकृत है। कृपया साइन इन करें।'
+          : 'This email is already registered. Please sign in instead.';
       }
       toast({
-        title: "Registration Failed",
+        title: language === 'hi' ? 'पंजीकरण विफल' : 'Registration Failed',
         description: message,
         variant: "destructive",
       });
     } else {
       toast({
-        title: "Account Created!",
-        description: "Welcome to OceanWatch. You can now report hazards and receive alerts.",
+        title: t.auth.accountCreated,
+        description: t.auth.welcomeMessage,
       });
       navigate('/');
     }
@@ -135,10 +141,13 @@ const Login = () => {
   return (
     <>
       <Helmet>
-        <title>Sign In | OceanWatch</title>
+        <title>{t.auth.signIn} | OceanWatch</title>
         <meta 
           name="description" 
-          content="Sign in to OceanWatch to report hazards and receive alerts for your coastal area." 
+          content={language === 'hi' 
+            ? 'अपने तटीय क्षेत्र के लिए खतरों की रिपोर्ट करने और अलर्ट प्राप्त करने के लिए OceanWatch में साइन इन करें।'
+            : 'Sign in to OceanWatch to report hazards and receive alerts for your coastal area.'
+          } 
         />
       </Helmet>
       
@@ -157,7 +166,7 @@ const Login = () => {
             className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-8 transition-colors"
           >
             <ArrowLeft className="h-4 w-4" />
-            Back to home
+            {t.auth.backToHome}
           </Link>
 
           {/* Logo */}
@@ -170,7 +179,7 @@ const Login = () => {
                 OceanWatch
               </span>
               <span className="block text-sm text-muted-foreground">
-                Coastal Hazard Reporting
+                {language === 'hi' ? 'तटीय खतरा रिपोर्टिंग' : 'Coastal Hazard Reporting'}
               </span>
             </div>
           </div>
@@ -179,14 +188,14 @@ const Login = () => {
           <Card className="p-6 md:p-8">
             <Tabs defaultValue="login" className="w-full">
               <TabsList className="grid w-full grid-cols-2 mb-6">
-                <TabsTrigger value="login">Sign In</TabsTrigger>
-                <TabsTrigger value="register">Register</TabsTrigger>
+                <TabsTrigger value="login">{t.auth.signIn}</TabsTrigger>
+                <TabsTrigger value="register">{t.auth.register}</TabsTrigger>
               </TabsList>
 
               <TabsContent value="login">
                 <form onSubmit={handleLogin} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
+                    <Label htmlFor="email">{t.auth.email}</Label>
                     <div className="relative">
                       <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input 
@@ -202,7 +211,7 @@ const Login = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="password">Password</Label>
+                    <Label htmlFor="password">{t.auth.password}</Label>
                     <div className="relative">
                       <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input 
@@ -226,10 +235,10 @@ const Login = () => {
                     {isLoading ? (
                       <>
                         <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                        Signing in...
+                        {t.auth.signingIn}
                       </>
                     ) : (
-                      'Sign In'
+                      t.auth.signIn
                     )}
                   </Button>
                 </form>
@@ -238,13 +247,13 @@ const Login = () => {
               <TabsContent value="register">
                 <form onSubmit={handleRegister} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="name">Full Name</Label>
+                    <Label htmlFor="name">{t.auth.fullName}</Label>
                     <div className="relative">
                       <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input 
                         id="name" 
                         type="text" 
-                        placeholder="Your name"
+                        placeholder={language === 'hi' ? 'आपका नाम' : 'Your name'}
                         className="pl-10"
                         value={registerName}
                         onChange={(e) => setRegisterName(e.target.value)}
@@ -254,7 +263,7 @@ const Login = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="reg-email">Email</Label>
+                    <Label htmlFor="reg-email">{t.auth.email}</Label>
                     <div className="relative">
                       <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input 
@@ -270,7 +279,7 @@ const Login = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="phone">Phone (Optional)</Label>
+                    <Label htmlFor="phone">{t.auth.phone}</Label>
                     <div className="relative">
                       <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input 
@@ -285,7 +294,7 @@ const Login = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="reg-password">Password</Label>
+                    <Label htmlFor="reg-password">{t.auth.password}</Label>
                     <div className="relative">
                       <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input 
@@ -309,10 +318,10 @@ const Login = () => {
                     {isLoading ? (
                       <>
                         <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                        Creating account...
+                        {t.auth.creatingAccount}
                       </>
                     ) : (
-                      'Create Account'
+                      t.auth.createAccount
                     )}
                   </Button>
                 </form>
@@ -320,10 +329,10 @@ const Login = () => {
             </Tabs>
 
             <p className="text-xs text-center text-muted-foreground mt-6">
-              By continuing, you agree to our{' '}
-              <a href="#" className="text-primary hover:underline">Terms of Service</a>
-              {' '}and{' '}
-              <a href="#" className="text-primary hover:underline">Privacy Policy</a>
+              {t.auth.termsText}{' '}
+              <a href="#" className="text-primary hover:underline">{t.auth.termsOfService}</a>
+              {' '}{t.auth.and}{' '}
+              <a href="#" className="text-primary hover:underline">{t.auth.privacyPolicy}</a>
             </p>
           </Card>
         </div>
