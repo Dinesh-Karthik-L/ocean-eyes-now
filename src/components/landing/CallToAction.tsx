@@ -1,8 +1,11 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { MapPin, ArrowRight, Shield } from 'lucide-react';
+import { useLanguage } from '@/i18n/LanguageContext';
 
 export const CallToAction = () => {
+  const { t, language } = useLanguage();
+
   return (
     <section className="py-20 md:py-32 bg-background relative overflow-hidden">
       {/* Background Pattern */}
@@ -21,12 +24,13 @@ export const CallToAction = () => {
             </div>
 
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-display font-bold text-primary-foreground mb-6">
-              Join Our Coastal Safety Network
+              {language === 'hi' 
+                ? 'हमारे तटीय सुरक्षा नेटवर्क से जुड़ें'
+                : 'Join Our Coastal Safety Network'}
             </h2>
 
             <p className="text-lg md:text-xl text-primary-foreground/80 max-w-2xl mx-auto mb-10">
-              Be part of the community protecting our coastlines. Report hazards, 
-              receive alerts, and help save lives during ocean emergencies.
+              {t.cta.subtitle}
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -35,7 +39,7 @@ export const CallToAction = () => {
                   size="xl" 
                   className="gap-3 min-w-[200px] bg-primary-foreground text-primary hover:bg-primary-foreground/90"
                 >
-                  Get Started Free
+                  {t.cta.getStarted}
                   <ArrowRight className="h-5 w-5" />
                 </Button>
               </Link>
@@ -46,7 +50,7 @@ export const CallToAction = () => {
                   className="gap-3 min-w-[200px] border-primary-foreground/20"
                 >
                   <MapPin className="h-5 w-5" />
-                  Explore Map
+                  {language === 'hi' ? 'मानचित्र देखें' : 'Explore Map'}
                 </Button>
               </Link>
             </div>
@@ -54,14 +58,22 @@ export const CallToAction = () => {
             {/* Trust Badges */}
             <div className="mt-12 pt-8 border-t border-primary-foreground/20">
               <p className="text-sm text-primary-foreground/60 mb-4">
-                Trusted by disaster management authorities
+                {language === 'hi' 
+                  ? 'आपदा प्रबंधन अधिकारियों द्वारा विश्वसनीय'
+                  : 'Trusted by disaster management authorities'}
               </p>
               <div className="flex flex-wrap items-center justify-center gap-6 text-primary-foreground/40">
-                <span className="text-sm font-medium">INCOIS Compatible</span>
+                <span className="text-sm font-medium">
+                  {language === 'hi' ? 'INCOIS संगत' : 'INCOIS Compatible'}
+                </span>
                 <span className="text-primary-foreground/20">•</span>
-                <span className="text-sm font-medium">NDRF Ready</span>
+                <span className="text-sm font-medium">
+                  {language === 'hi' ? 'NDRF तैयार' : 'NDRF Ready'}
+                </span>
                 <span className="text-primary-foreground/20">•</span>
-                <span className="text-sm font-medium">State Emergency Approved</span>
+                <span className="text-sm font-medium">
+                  {language === 'hi' ? 'राज्य आपातकालीन स्वीकृत' : 'State Emergency Approved'}
+                </span>
               </div>
             </div>
           </div>

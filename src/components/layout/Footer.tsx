@@ -1,7 +1,10 @@
 import { Link } from 'react-router-dom';
 import { AlertTriangle, Github, Twitter, Mail } from 'lucide-react';
+import { useLanguage } from '@/i18n/LanguageContext';
 
 export const Footer = () => {
+  const { t, language } = useLanguage();
+
   return (
     <footer className="bg-primary text-primary-foreground">
       <div className="container mx-auto px-4 py-12">
@@ -17,38 +20,37 @@ export const Footer = () => {
                   OceanWatch
                 </span>
                 <span className="block text-xs text-primary-foreground/70 -mt-1">
-                  Coastal Hazard Reporting
+                  {language === 'hi' ? 'तटीय खतरा रिपोर्टिंग' : 'Coastal Hazard Reporting'}
                 </span>
               </div>
             </div>
             <p className="text-sm text-primary-foreground/70 max-w-sm">
-              Empowering coastal communities with real-time hazard reporting and 
-              early warning systems. Together, we can save lives.
+              {t.footer.tagline}
             </p>
           </div>
 
           {/* Quick Links */}
           <div>
-            <h4 className="font-semibold mb-4">Quick Links</h4>
+            <h4 className="font-semibold mb-4">{t.footer.quickLinks}</h4>
             <ul className="space-y-2 text-sm text-primary-foreground/70">
               <li>
                 <Link to="/map" className="hover:text-primary-foreground transition-colors">
-                  Live Map
+                  {language === 'hi' ? 'लाइव मैप' : 'Live Map'}
                 </Link>
               </li>
               <li>
                 <Link to="/report" className="hover:text-primary-foreground transition-colors">
-                  Submit Report
+                  {language === 'hi' ? 'रिपोर्ट जमा करें' : 'Submit Report'}
                 </Link>
               </li>
               <li>
                 <Link to="/dashboard" className="hover:text-primary-foreground transition-colors">
-                  Dashboard
+                  {t.nav.dashboard}
                 </Link>
               </li>
               <li>
                 <Link to="/alerts" className="hover:text-primary-foreground transition-colors">
-                  Alerts
+                  {t.nav.alerts}
                 </Link>
               </li>
             </ul>
@@ -56,26 +58,26 @@ export const Footer = () => {
 
           {/* Resources */}
           <div>
-            <h4 className="font-semibold mb-4">Resources</h4>
+            <h4 className="font-semibold mb-4">{t.footer.resources}</h4>
             <ul className="space-y-2 text-sm text-primary-foreground/70">
               <li>
                 <a href="#" className="hover:text-primary-foreground transition-colors">
-                  Safety Guidelines
+                  {language === 'hi' ? 'सुरक्षा दिशानिर्देश' : 'Safety Guidelines'}
                 </a>
               </li>
               <li>
                 <a href="#" className="hover:text-primary-foreground transition-colors">
-                  Emergency Contacts
+                  {t.footer.emergency}
                 </a>
               </li>
               <li>
                 <a href="#" className="hover:text-primary-foreground transition-colors">
-                  INCOIS Data
+                  {language === 'hi' ? 'INCOIS डेटा' : 'INCOIS Data'}
                 </a>
               </li>
               <li>
                 <a href="#" className="hover:text-primary-foreground transition-colors">
-                  API Documentation
+                  {language === 'hi' ? 'API दस्तावेज़' : 'API Documentation'}
                 </a>
               </li>
             </ul>
@@ -84,7 +86,7 @@ export const Footer = () => {
 
         <div className="mt-12 pt-8 border-t border-primary-foreground/20 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-sm text-primary-foreground/60">
-            © 2024 OceanWatch. Built for disaster resilience.
+            {t.footer.copyright}
           </p>
           <div className="flex items-center gap-4">
             <a href="#" className="text-primary-foreground/60 hover:text-primary-foreground transition-colors">

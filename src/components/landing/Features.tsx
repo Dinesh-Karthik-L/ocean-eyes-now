@@ -9,74 +9,94 @@ import {
   Users
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-const features = [
-  {
-    icon: MapPin,
-    title: 'Interactive Hazard Map',
-    description: 'Real-time visualization of reported hazards with color-coded pins and dynamic hotspot detection.',
-    color: 'bg-hazard-waves',
-  },
-  {
-    icon: Camera,
-    title: 'Media-Rich Reports',
-    description: 'Submit photos and videos with your hazard reports to provide visual evidence for verification.',
-    color: 'bg-hazard-flood',
-  },
-  {
-    icon: Wifi,
-    title: 'Offline Mode',
-    description: 'Report hazards even without internet. Data automatically syncs when connectivity is restored.',
-    color: 'bg-hazard-storm',
-  },
-  {
-    icon: Radio,
-    title: 'Social Intelligence',
-    description: 'AI-powered analysis of social media posts to detect emerging hazards and public sentiment.',
-    color: 'bg-hazard-damage',
-  },
-  {
-    icon: BarChart3,
-    title: 'Situation Dashboard',
-    description: 'Comprehensive analytics for officials with filters, trends, and exportable reports.',
-    color: 'bg-hazard-tides',
-  },
-  {
-    icon: Bell,
-    title: 'Smart Alerts',
-    description: 'Push notifications when new hotspots emerge or risk levels increase in your area.',
-    color: 'bg-hazard-tsunami',
-  },
-  {
-    icon: Globe,
-    title: 'Multilingual Support',
-    description: 'Report and receive alerts in English, Tamil, Telugu, or Hindi for broader accessibility.',
-    color: 'bg-accent',
-  },
-  {
-    icon: Users,
-    title: 'Role-Based Access',
-    description: 'Different dashboards for citizens, volunteers, officials, and analysts with appropriate permissions.',
-    color: 'bg-success',
-  },
-];
+import { useLanguage } from '@/i18n/LanguageContext';
 
 export const Features = () => {
+  const { t, language } = useLanguage();
+
+  const features = [
+    {
+      icon: MapPin,
+      title: t.features.items.map.title,
+      description: t.features.items.map.description,
+      color: 'bg-hazard-waves',
+    },
+    {
+      icon: Camera,
+      title: language === 'hi' ? 'मीडिया-समृद्ध रिपोर्ट' : 'Media-Rich Reports',
+      description: language === 'hi' 
+        ? 'सत्यापन के लिए दृश्य साक्ष्य प्रदान करने हेतु अपनी खतरे की रिपोर्ट के साथ फ़ोटो और वीडियो सबमिट करें।'
+        : 'Submit photos and videos with your hazard reports to provide visual evidence for verification.',
+      color: 'bg-hazard-flood',
+    },
+    {
+      icon: Wifi,
+      title: t.features.items.offline.title,
+      description: t.features.items.offline.description,
+      color: 'bg-hazard-storm',
+    },
+    {
+      icon: Radio,
+      title: language === 'hi' ? 'सोशल इंटेलिजेंस' : 'Social Intelligence',
+      description: language === 'hi'
+        ? 'उभरते खतरों और जनता की भावना का पता लगाने के लिए सोशल मीडिया पोस्ट का AI-संचालित विश्लेषण।'
+        : 'AI-powered analysis of social media posts to detect emerging hazards and public sentiment.',
+      color: 'bg-hazard-damage',
+    },
+    {
+      icon: BarChart3,
+      title: language === 'hi' ? 'स्थिति डैशबोर्ड' : 'Situation Dashboard',
+      description: language === 'hi'
+        ? 'फ़िल्टर, रुझान और निर्यात योग्य रिपोर्ट के साथ अधिकारियों के लिए व्यापक विश्लेषण।'
+        : 'Comprehensive analytics for officials with filters, trends, and exportable reports.',
+      color: 'bg-hazard-tides',
+    },
+    {
+      icon: Bell,
+      title: t.features.items.alerts.title,
+      description: t.features.items.alerts.description,
+      color: 'bg-hazard-tsunami',
+    },
+    {
+      icon: Globe,
+      title: t.features.items.multilingual.title,
+      description: t.features.items.multilingual.description,
+      color: 'bg-accent',
+    },
+    {
+      icon: Users,
+      title: language === 'hi' ? 'भूमिका-आधारित पहुंच' : 'Role-Based Access',
+      description: language === 'hi'
+        ? 'उचित अनुमतियों के साथ नागरिकों, स्वयंसेवकों, अधिकारियों और विश्लेषकों के लिए अलग-अलग डैशबोर्ड।'
+        : 'Different dashboards for citizens, volunteers, officials, and analysts with appropriate permissions.',
+      color: 'bg-success',
+    },
+  ];
+
   return (
     <section className="py-20 md:py-32 bg-background">
       <div className="container mx-auto px-4">
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto mb-16">
           <span className="inline-block px-3 py-1 rounded-full bg-secondary text-secondary-foreground text-sm font-medium mb-4">
-            Platform Features
+            {language === 'hi' ? 'प्लेटफ़ॉर्म सुविधाएं' : 'Platform Features'}
           </span>
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-display font-bold text-foreground mb-6">
-            Empowering Communities with{' '}
-            <span className="text-primary">Real-Time Intelligence</span>
+            {language === 'hi' ? (
+              <>
+                समुदायों को{' '}
+                <span className="text-primary">रीयल-टाइम इंटेलिजेंस</span>
+                {' '}से सशक्त बनाना
+              </>
+            ) : (
+              <>
+                Empowering Communities with{' '}
+                <span className="text-primary">Real-Time Intelligence</span>
+              </>
+            )}
           </h2>
           <p className="text-lg text-muted-foreground">
-            A comprehensive platform bridging the gap between satellite warnings 
-            and ground-level observations for effective disaster response.
+            {t.features.subtitle}
           </p>
         </div>
 

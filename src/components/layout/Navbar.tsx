@@ -9,14 +9,15 @@ import {
   BarChart3, 
   Bell, 
   User,
-  Globe,
   AlertTriangle,
   LogOut,
   Shield,
-  ChartLine
+  ChartLine,
+  Globe
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
+import { useLanguage, languages } from '@/i18n/LanguageContext';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,13 +28,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-
-const navigation = [
-  { name: 'Map', href: '/map', icon: MapPin },
-  { name: 'Report', href: '/report', icon: FileText },
-  { name: 'Dashboard', href: '/dashboard', icon: BarChart3 },
-  { name: 'Alerts', href: '/alerts', icon: Bell },
-];
 
 const roleIcons = {
   citizen: User,
@@ -54,6 +48,14 @@ export const Navbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, profile, role, signOut, isLoading } = useAuth();
+  const { t, language, setLanguage } = useLanguage();
+
+  const navigation = [
+    { name: t.nav.map, href: '/map', icon: MapPin },
+    { name: t.nav.report, href: '/report', icon: FileText },
+    { name: t.nav.dashboard, href: '/dashboard', icon: BarChart3 },
+    { name: t.nav.alerts, href: '/alerts', icon: Bell },
+  ];
 
   const handleSignOut = async () => {
     await signOut();
@@ -73,6 +75,7 @@ export const Navbar = () => {
   };
 
   const RoleIcon = role ? roleIcons[role] : User;
+  const roleLabel = role ? t.roles[role] : '';
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 glass-card border-b">
@@ -88,7 +91,7 @@ export const Navbar = () => {
                 OceanWatch
               </span>
               <span className="block text-xs text-muted-foreground -mt-1">
-                Coastal Hazard Reporting
+                {language === 'hi' ? 'तटीय खतरा रिपोर्टिंग' : 'Coastal Hazard Reporting'}
               </span>
             </div>
           </Link>
@@ -99,7 +102,7 @@ export const Navbar = () => {
               const Icon = item.icon;
               const isActive = location.pathname === item.href;
               return (
-                <Link key={item.name} to={item.href}>
+                <Link key={item.href} to={item.href}>
                   <Button
                     variant={isActive ? 'secondary' : 'ghost'}
                     size="sm"
@@ -118,9 +121,29 @@ export const Navbar = () => {
 
           {/* Right Actions */}
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" className="hidden md:flex">
-              <Globe className="h-4 w-4" />
-            </Button>
+            {/* Language Switcher */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="hidden md:flex">
+                  <Globe className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {languages.map((lang) => (
+                  <DropdownMenuItem
+                    key={lang.code}
+                    onClick={() => setLanguage(lang.code)}
+                    className={cn(
+                      "cursor-pointer",
+                      language === lang.code && "bg-accent"
+                    )}
+                  >
+                    <span className="mr-2">{lang.code === 'en' ? '🇬🇧' : '🇮🇳'}</span>
+                    {lang.nativeName}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
             
             {isLoading ? (
               <div className="w-8 h-8 rounded-full bg-muted animate-pulse" />
@@ -153,7 +176,7 @@ export const Navbar = () => {
                           className={cn("mt-1 w-fit capitalize", roleColors[role])}
                         >
                           <RoleIcon className="h-3 w-3 mr-1" />
-                          {role}
+                          {roleLabel}
                         </Badge>
                       )}
                     </div>
@@ -161,7 +184,7 @@ export const Navbar = () => {
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleSignOut} className="text-destructive cursor-pointer">
                     <LogOut className="h-4 w-4 mr-2" />
-                    Sign Out
+                    {t.nav.signOut}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -169,7 +192,7 @@ export const Navbar = () => {
               <Link to="/login">
                 <Button variant="default" size="sm" className="gap-2">
                   <User className="h-4 w-4" />
-                  <span className="hidden sm:inline">Sign In</span>
+                  <span className="hidden sm:inline">{t.nav.signIn}</span>
                 </Button>
               </Link>
             )}
@@ -199,7 +222,7 @@ export const Navbar = () => {
                 const isActive = location.pathname === item.href;
                 return (
                   <Link
-                    key={item.name}
+                    key={item.href}
                     to={item.href}
                     onClick={() => setMobileMenuOpen(false)}
                   >
@@ -213,6 +236,22 @@ export const Navbar = () => {
                   </Link>
                 );
               })}
+              
+              {/* Mobile Language Switcher */}
+              <div className="flex gap-2 px-3 py-2">
+                {languages.map((lang) => (
+                  <Button
+                    key={lang.code}
+                    variant={language === lang.code ? 'secondary' : 'ghost'}
+                    size="sm"
+                    onClick={() => setLanguage(lang.code)}
+                    className="flex-1"
+                  >
+                    {lang.code === 'en' ? '🇬🇧' : '🇮🇳'} {lang.nativeName}
+                  </Button>
+                ))}
+              </div>
+
               {user && (
                 <Button
                   variant="ghost"
@@ -220,7 +259,7 @@ export const Navbar = () => {
                   onClick={handleSignOut}
                 >
                   <LogOut className="h-5 w-5" />
-                  Sign Out
+                  {t.nav.signOut}
                 </Button>
               )}
             </div>
