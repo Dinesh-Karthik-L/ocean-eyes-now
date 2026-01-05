@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,20 +16,121 @@ import {
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { Helmet } from 'react-helmet-async';
+import { useAuth } from '@/hooks/useAuth';
+import { z } from 'zod';
+
+const emailSchema = z.string().email('Please enter a valid email address');
+const passwordSchema = z.string().min(6, 'Password must be at least 6 characters');
 
 const Login = () => {
+  const navigate = useNavigate();
+  const { user, signIn, signUp, isLoading: authLoading } = useAuth();
+  
   const [isLoading, setIsLoading] = useState(false);
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [registerName, setRegisterName] = useState('');
+  const [registerEmail, setRegisterEmail] = useState('');
+  const [registerPhone, setRegisterPhone] = useState('');
+  const [registerPassword, setRegisterPassword] = useState('');
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user && !authLoading) {
+      navigate('/');
+    }
+  }, [user, authLoading, navigate]);
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate inputs
+    try {
+      emailSchema.parse(loginEmail);
+      passwordSchema.parse(loginPassword);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        toast({
+          title: "Validation Error",
+          description: err.errors[0].message,
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
     setIsLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    const { error } = await signIn(loginEmail, loginPassword);
     setIsLoading(false);
-    toast({
-      title: "Demo Mode",
-      description: "Authentication requires backend setup. Connect to Supabase to enable.",
-    });
+
+    if (error) {
+      let message = error.message;
+      if (message.includes('Invalid login credentials')) {
+        message = 'Invalid email or password. Please try again.';
+      }
+      toast({
+        title: "Sign In Failed",
+        description: message,
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Welcome back!",
+        description: "You have been signed in successfully.",
+      });
+      navigate('/');
+    }
   };
+
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Validate inputs
+    try {
+      emailSchema.parse(registerEmail);
+      passwordSchema.parse(registerPassword);
+      if (!registerName.trim()) {
+        throw new Error('Please enter your full name');
+      }
+    } catch (err) {
+      toast({
+        title: "Validation Error",
+        description: err instanceof z.ZodError ? err.errors[0].message : (err as Error).message,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    const { error } = await signUp(registerEmail, registerPassword, registerName, registerPhone);
+    setIsLoading(false);
+
+    if (error) {
+      let message = error.message;
+      if (message.includes('already registered')) {
+        message = 'This email is already registered. Please sign in instead.';
+      }
+      toast({
+        title: "Registration Failed",
+        description: message,
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Account Created!",
+        description: "Welcome to OceanWatch. You can now report hazards and receive alerts.",
+      });
+      navigate('/');
+    }
+  };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <>
@@ -83,7 +184,7 @@ const Login = () => {
               </TabsList>
 
               <TabsContent value="login">
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <form onSubmit={handleLogin} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="email">Email</Label>
                     <div className="relative">
@@ -93,6 +194,9 @@ const Login = () => {
                         type="email" 
                         placeholder="you@example.com"
                         className="pl-10"
+                        value={loginEmail}
+                        onChange={(e) => setLoginEmail(e.target.value)}
+                        required
                       />
                     </div>
                   </div>
@@ -106,18 +210,11 @@ const Login = () => {
                         type="password" 
                         placeholder="••••••••"
                         className="pl-10"
+                        value={loginPassword}
+                        onChange={(e) => setLoginPassword(e.target.value)}
+                        required
                       />
                     </div>
-                  </div>
-
-                  <div className="flex items-center justify-between text-sm">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input type="checkbox" className="rounded border-border" />
-                      <span className="text-muted-foreground">Remember me</span>
-                    </label>
-                    <a href="#" className="text-primary hover:underline">
-                      Forgot password?
-                    </a>
                   </div>
 
                   <Button 
@@ -139,7 +236,7 @@ const Login = () => {
               </TabsContent>
 
               <TabsContent value="register">
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <form onSubmit={handleRegister} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="name">Full Name</Label>
                     <div className="relative">
@@ -149,6 +246,9 @@ const Login = () => {
                         type="text" 
                         placeholder="Your name"
                         className="pl-10"
+                        value={registerName}
+                        onChange={(e) => setRegisterName(e.target.value)}
+                        required
                       />
                     </div>
                   </div>
@@ -162,6 +262,9 @@ const Login = () => {
                         type="email" 
                         placeholder="you@example.com"
                         className="pl-10"
+                        value={registerEmail}
+                        onChange={(e) => setRegisterEmail(e.target.value)}
+                        required
                       />
                     </div>
                   </div>
@@ -175,6 +278,8 @@ const Login = () => {
                         type="tel" 
                         placeholder="+91 98765 43210"
                         className="pl-10"
+                        value={registerPhone}
+                        onChange={(e) => setRegisterPhone(e.target.value)}
                       />
                     </div>
                   </div>
@@ -188,6 +293,9 @@ const Login = () => {
                         type="password" 
                         placeholder="••••••••"
                         className="pl-10"
+                        value={registerPassword}
+                        onChange={(e) => setRegisterPassword(e.target.value)}
+                        required
                       />
                     </div>
                   </div>
