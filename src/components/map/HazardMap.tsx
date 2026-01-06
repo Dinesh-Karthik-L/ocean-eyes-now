@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
+import { GoogleMap, useJsApiLoader, Marker, Circle, InfoWindow } from '@react-google-maps/api';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -24,6 +25,8 @@ import {
   DamageIcon,
 } from '@/components/icons/HazardIcons';
 
+const GOOGLE_MAPS_API_KEY = 'AIzaSyCRZP6UzA8n9o8_U6Qgpmu_gOUXNPCBm3M';
+
 const hazardIcons: Record<HazardType, React.ComponentType<{ className?: string; size?: number }>> = {
   tsunami: TsunamiIcon,
   storm_surge: StormIcon,
@@ -33,37 +36,76 @@ const hazardIcons: Record<HazardType, React.ComponentType<{ className?: string; 
   coastal_damage: DamageIcon,
 };
 
-interface HazardPinProps {
-  report: HazardReport;
-  onClick: () => void;
-  isSelected: boolean;
-  style: React.CSSProperties;
-}
+const mapContainerStyle = {
+  width: '100%',
+  height: '100%',
+};
 
-const HazardPin = ({ report, onClick, isSelected, style }: HazardPinProps) => {
-  const config = HAZARD_CONFIG[report.hazardType];
-  const Icon = hazardIcons[report.hazardType];
-  const severityConfig = SEVERITY_CONFIG[report.severity];
+const defaultCenter = {
+  lat: 13.0827,
+  lng: 80.2707,
+};
 
-  return (
-    <div
-      className={cn(
-        "absolute hazard-pin cursor-pointer transition-all duration-200",
-        config.bgColor,
-        isSelected && "scale-125 z-20 ring-4 ring-primary-foreground shadow-xl"
-      )}
-      style={style}
-      onClick={onClick}
-    >
-      <Icon className="text-white" size={16} />
-      {report.severity === 'critical' && (
-        <span className="absolute -top-1 -right-1 flex h-3 w-3">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75"></span>
-          <span className="relative inline-flex rounded-full h-3 w-3 bg-destructive"></span>
-        </span>
-      )}
-    </div>
-  );
+const mapOptions: google.maps.MapOptions = {
+  zoom: 11,
+  mapTypeId: 'roadmap',
+  zoomControl: true,
+  fullscreenControl: true,
+  streetViewControl: false,
+  mapTypeControl: false,
+  styles: [
+    {
+      featureType: 'water',
+      elementType: 'geometry',
+      stylers: [{ color: '#193341' }],
+    },
+    {
+      featureType: 'landscape',
+      elementType: 'geometry',
+      stylers: [{ color: '#2c5a71' }],
+    },
+    {
+      featureType: 'road',
+      elementType: 'geometry',
+      stylers: [{ color: '#29768a' }, { lightness: -37 }],
+    },
+    {
+      featureType: 'poi',
+      elementType: 'geometry',
+      stylers: [{ color: '#406d80' }],
+    },
+    {
+      featureType: 'transit',
+      elementType: 'geometry',
+      stylers: [{ color: '#406d80' }],
+    },
+    {
+      elementType: 'labels.text.stroke',
+      stylers: [{ visibility: 'on' }, { color: '#3e606f' }, { weight: 2 }, { gamma: 0.84 }],
+    },
+    {
+      elementType: 'labels.text.fill',
+      stylers: [{ color: '#ffffff' }],
+    },
+    {
+      featureType: 'administrative',
+      elementType: 'geometry',
+      stylers: [{ weight: 0.6 }, { color: '#1a3541' }],
+    },
+    {
+      featureType: 'poi.park',
+      elementType: 'geometry',
+      stylers: [{ color: '#2c5a71' }],
+    },
+  ],
+};
+
+// Severity colors for markers and circles
+const severityColors: Record<string, string> = {
+  low: '#22c55e',
+  medium: '#f59e0b',
+  high: '#ef4444',
+  critical: '#dc2626',
 };
 
 const ReportDetail = ({ report, onClose }: { report: HazardReport; onClose: () => void }) => {
@@ -135,10 +177,31 @@ const ReportDetail = ({ report, onClose }: { report: HazardReport; onClose: () =
   );
 };
 
+// Create SVG marker icon as data URL
+const createMarkerIcon = (hazardType: HazardType, severity: string): string => {
+  const config = HAZARD_CONFIG[hazardType];
+  const bgColor = severityColors[severity] || severityColors.medium;
+  
+  // SVG marker with hazard icon embedded
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 36 36">
+      <circle cx="18" cy="18" r="16" fill="${bgColor}" stroke="white" stroke-width="2"/>
+    </svg>
+  `;
+  
+  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+};
+
 export const HazardMap = () => {
   const [selectedReport, setSelectedReport] = useState<HazardReport | null>(null);
   const [showFilters, setShowFilters] = useState(false);
+  const [showHotspots, setShowHotspots] = useState(true);
   const [activeFilters, setActiveFilters] = useState<HazardType[]>([]);
+  const [map, setMap] = useState<google.maps.Map | null>(null);
+
+  const { isLoaded, loadError } = useJsApiLoader({
+    googleMapsApiKey: GOOGLE_MAPS_API_KEY,
+  });
 
   const filteredReports = useMemo(() => {
     if (activeFilters.length === 0) return mockReports;
@@ -153,80 +216,82 @@ export const HazardMap = () => {
     );
   };
 
-  // Convert lat/lng to pixel positions (simplified for demo)
-  const getPosition = (lat: number, lng: number) => {
-    // Normalize to map bounds (Chennai area roughly 12.9 - 13.3 lat, 80.2 - 80.35 lng)
-    const minLat = 12.9, maxLat = 13.3;
-    const minLng = 80.2, maxLng = 80.35;
-    
-    const x = ((lng - minLng) / (maxLng - minLng)) * 100;
-    const y = ((maxLat - lat) / (maxLat - minLat)) * 100;
-    
-    return { left: `${x}%`, top: `${y}%` };
-  };
+  const onLoad = useCallback((map: google.maps.Map) => {
+    setMap(map);
+  }, []);
+
+  const onUnmount = useCallback(() => {
+    setMap(null);
+  }, []);
+
+  if (loadError) {
+    return (
+      <div className="flex items-center justify-center h-[calc(100vh-4rem)] bg-secondary">
+        <p className="text-destructive">Error loading Google Maps</p>
+      </div>
+    );
+  }
+
+  if (!isLoaded) {
+    return (
+      <div className="flex items-center justify-center h-[calc(100vh-4rem)] bg-secondary">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative w-full h-[calc(100vh-4rem)] bg-secondary rounded-lg overflow-hidden">
-      {/* Map Background - Simulated */}
-      <div className="absolute inset-0 bg-gradient-to-br from-secondary via-secondary to-accent/5">
-        {/* Grid Pattern */}
-        <div 
-          className="absolute inset-0 opacity-20"
-          style={{
-            backgroundImage: 'linear-gradient(hsl(var(--border)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--border)) 1px, transparent 1px)',
-            backgroundSize: '50px 50px',
-          }}
-        />
-        
-        {/* Coast Line Simulation */}
-        <svg className="absolute inset-0 w-full h-full" preserveAspectRatio="none">
-          <path
-            d="M0,30 Q20,35 40,32 T80,35 T100,30 L100,100 L0,100 Z"
-            fill="hsl(var(--primary) / 0.1)"
-            className="opacity-30"
-          />
-        </svg>
-
-        {/* Location Label */}
-        <div className="absolute top-4 left-4 bg-card/90 backdrop-blur-sm rounded-lg px-3 py-2 text-sm font-medium text-foreground border border-border">
-          Chennai Coast, India
-        </div>
-      </div>
-
-      {/* Hotspots (Heatmap circles) */}
-      {mockHotspots.map((hotspot) => {
-        const pos = getPosition(hotspot.latitude, hotspot.longitude);
-        const severityColor = SEVERITY_CONFIG[hotspot.severity].bgColor;
-        return (
-          <div
+      {/* Google Map */}
+      <GoogleMap
+        mapContainerStyle={mapContainerStyle}
+        center={defaultCenter}
+        zoom={11}
+        options={mapOptions}
+        onLoad={onLoad}
+        onUnmount={onUnmount}
+        onClick={() => setSelectedReport(null)}
+      >
+        {/* Hotspot Circles */}
+        {showHotspots && mockHotspots.map((hotspot) => (
+          <Circle
             key={hotspot.id}
-            className={cn(
-              "absolute rounded-full opacity-30 animate-ping-slow",
-              severityColor
-            )}
-            style={{
-              ...pos,
-              width: `${hotspot.radius / 20}px`,
-              height: `${hotspot.radius / 20}px`,
-              transform: 'translate(-50%, -50%)',
+            center={{ lat: hotspot.latitude, lng: hotspot.longitude }}
+            radius={hotspot.radius}
+            options={{
+              fillColor: severityColors[hotspot.severity],
+              fillOpacity: 0.25,
+              strokeColor: severityColors[hotspot.severity],
+              strokeOpacity: 0.6,
+              strokeWeight: 2,
             }}
           />
-        );
-      })}
+        ))}
 
-      {/* Report Pins */}
-      {filteredReports.map((report) => (
-        <HazardPin
-          key={report.id}
-          report={report}
-          onClick={() => setSelectedReport(report)}
-          isSelected={selectedReport?.id === report.id}
-          style={getPosition(report.latitude, report.longitude)}
-        />
-      ))}
+        {/* Hazard Markers */}
+        {filteredReports.map((report) => (
+          <Marker
+            key={report.id}
+            position={{ lat: report.latitude, lng: report.longitude }}
+            onClick={() => setSelectedReport(report)}
+            icon={{
+              url: createMarkerIcon(report.hazardType, report.severity),
+              scaledSize: new google.maps.Size(36, 36),
+              anchor: new google.maps.Point(18, 18),
+            }}
+            animation={report.severity === 'critical' ? google.maps.Animation.BOUNCE : undefined}
+            zIndex={report.severity === 'critical' ? 1000 : 1}
+          />
+        ))}
+      </GoogleMap>
+
+      {/* Location Label Overlay */}
+      <div className="absolute top-4 left-4 bg-card/90 backdrop-blur-sm rounded-lg px-3 py-2 text-sm font-medium text-foreground border border-border z-10">
+        Chennai Coast, India
+      </div>
 
       {/* Map Controls */}
-      <div className="absolute top-4 right-4 flex flex-col gap-2">
+      <div className="absolute top-4 right-4 flex flex-col gap-2 z-10">
         <Button
           variant="glass"
           size="icon"
@@ -235,14 +300,19 @@ export const HazardMap = () => {
         >
           <Filter className="h-4 w-4" />
         </Button>
-        <Button variant="glass" size="icon">
+        <Button 
+          variant="glass" 
+          size="icon"
+          onClick={() => setShowHotspots(!showHotspots)}
+          className={cn(showHotspots && "ring-2 ring-primary")}
+        >
           <Layers className="h-4 w-4" />
         </Button>
       </div>
 
       {/* Filter Panel */}
       {showFilters && (
-        <Card className="absolute top-4 right-16 w-64 p-4 animate-scale-in">
+        <Card className="absolute top-4 right-16 w-64 p-4 animate-scale-in z-20">
           <h4 className="font-semibold mb-3">Filter by Hazard Type</h4>
           <div className="space-y-2">
             {(Object.keys(HAZARD_CONFIG) as HazardType[]).map((type) => {
@@ -288,7 +358,7 @@ export const HazardMap = () => {
       )}
 
       {/* Legend */}
-      <div className="absolute bottom-4 left-4 glass-card rounded-lg p-3 hidden md:block">
+      <div className="absolute bottom-4 left-4 glass-card rounded-lg p-3 hidden md:block z-10">
         <h4 className="text-xs font-semibold text-muted-foreground mb-2">SEVERITY</h4>
         <div className="flex items-center gap-4">
           {(['low', 'medium', 'high', 'critical'] as const).map((level) => {
