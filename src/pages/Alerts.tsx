@@ -10,12 +10,14 @@ import {
   Clock, 
   ChevronRight,
   BellOff,
-  Settings
+  Settings,
+  Loader2
 } from 'lucide-react';
 import { SEVERITY_CONFIG, HAZARD_CONFIG } from '@/types/hazard';
-import { mockHotspots, mockReports } from '@/data/mockData';
+import { mockHotspots } from '@/data/mockData';
 import { cn } from '@/lib/utils';
 import { Helmet } from 'react-helmet-async';
+import { useHazardReports } from '@/hooks/useHazardReports';
 
 const timeAgo = (date: Date) => {
   const minutes = Math.floor((Date.now() - date.getTime()) / 60000);
@@ -26,7 +28,10 @@ const timeAgo = (date: Date) => {
 };
 
 const Alerts = () => {
-  const criticalReports = mockReports.filter(r => r.severity === 'critical' || r.severity === 'high');
+  const { reports, isLoading, error } = useHazardReports();
+  
+  // Filter for high/critical severity reports for alerts
+  const criticalReports = reports.filter(r => r.severity === 'critical' || r.severity === 'high');
 
   return (
     <>
@@ -121,69 +126,75 @@ const Alerts = () => {
                 <div>
                   <h2 className="font-semibold text-foreground">Recent Alerts</h2>
                   <p className="text-sm text-muted-foreground">
-                    Notifications from the last 24 hours
+                    {isLoading ? 'Loading...' : `${criticalReports.length} high priority alerts`}
                   </p>
                 </div>
               </div>
 
-              <div className="space-y-4">
-                {criticalReports.map((report) => {
-                  const config = HAZARD_CONFIG[report.hazardType];
-                  const severity = SEVERITY_CONFIG[report.severity];
-
-                  return (
-                    <div
-                      key={report.id}
-                      className="flex items-start gap-4 p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors cursor-pointer"
-                    >
-                      <div className={cn(
-                        "w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0",
-                        config.bgColor
-                      )}>
-                        <span className="text-lg">{config.icon}</span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="font-medium text-foreground">
-                            {config.label} Reported
-                          </span>
-                          <Badge className={cn(severity.bgColor, "text-white text-xs")}>
-                            {severity.label}
-                          </Badge>
-                        </div>
-                        <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
-                          {report.description}
-                        </p>
-                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                          <span className="flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
-                            {timeAgo(report.timestamp)}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <MapPin className="h-3 w-3" />
-                            {report.latitude.toFixed(2)}, {report.longitude.toFixed(2)}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </Card>
-
-            {/* Empty State (would show when no alerts) */}
-            {false && (
-              <Card className="p-12 text-center">
-                <div className="w-16 h-16 rounded-full bg-muted mx-auto mb-4 flex items-center justify-center">
-                  <BellOff className="h-8 w-8 text-muted-foreground" />
+              {isLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 </div>
-                <h3 className="font-semibold text-foreground mb-2">No Active Alerts</h3>
-                <p className="text-muted-foreground mb-4">
-                  You'll be notified when hazards are detected in your area
-                </p>
-                <Button variant="outline">Configure Alerts</Button>
-              </Card>
-            )}
+              ) : error ? (
+                <div className="text-center py-12 text-destructive">
+                  <p>Failed to load alerts: {error}</p>
+                </div>
+              ) : criticalReports.length === 0 ? (
+                <Card className="p-12 text-center border-0 shadow-none">
+                  <div className="w-16 h-16 rounded-full bg-muted mx-auto mb-4 flex items-center justify-center">
+                    <BellOff className="h-8 w-8 text-muted-foreground" />
+                  </div>
+                  <h3 className="font-semibold text-foreground mb-2">No High Priority Alerts</h3>
+                  <p className="text-muted-foreground mb-4">
+                    You'll be notified when high or critical hazards are detected
+                  </p>
+                </Card>
+              ) : (
+                <div className="space-y-4">
+                  {criticalReports.map((report) => {
+                    const config = HAZARD_CONFIG[report.hazardType];
+                    const severity = SEVERITY_CONFIG[report.severity];
+
+                    return (
+                      <div
+                        key={report.id}
+                        className="flex items-start gap-4 p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors cursor-pointer"
+                      >
+                        <div className={cn(
+                          "w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0",
+                          config.bgColor
+                        )}>
+                          <span className="text-lg">{config.icon}</span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-medium text-foreground">
+                              {config.label} Reported
+                            </span>
+                            <Badge className={cn(severity.bgColor, "text-white text-xs")}>
+                              {severity.label}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
+                            {report.description}
+                          </p>
+                          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                            <span className="flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              {timeAgo(report.timestamp)}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <MapPin className="h-3 w-3" />
+                              {report.latitude.toFixed(2)}, {report.longitude.toFixed(2)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </Card>
           </div>
         </main>
         <Footer />

@@ -14,7 +14,7 @@ import {
   CheckCircle2,
   Navigation
 } from 'lucide-react';
-import { HAZARD_CONFIG, HazardType } from '@/types/hazard';
+import { HAZARD_CONFIG, HazardType, SeverityLevel } from '@/types/hazard';
 import { cn } from '@/lib/utils';
 import {
   TsunamiIcon,
@@ -25,6 +25,8 @@ import {
   DamageIcon,
 } from '@/components/icons/HazardIcons';
 import { toast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 
 const hazardIcons: Record<HazardType, React.ComponentType<{ className?: string; size?: number }>> = {
   tsunami: TsunamiIcon,
@@ -36,7 +38,9 @@ const hazardIcons: Record<HazardType, React.ComponentType<{ className?: string; 
 };
 
 export const ReportForm = () => {
+  const { user } = useAuth();
   const [selectedHazard, setSelectedHazard] = useState<HazardType | null>(null);
+  const [selectedSeverity, setSelectedSeverity] = useState<SeverityLevel>('medium');
   const [description, setDescription] = useState('');
   const [location, setLocation] = useState({ lat: '', lng: '' });
   const [isLocating, setIsLocating] = useState(false);
@@ -94,21 +98,55 @@ export const ReportForm = () => {
       return;
     }
 
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please log in to submit a report.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const lat = parseFloat(location.lat) || 13.0827;
+    const lng = parseFloat(location.lng) || 80.2707;
+
     setIsSubmitting(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    setIsSubmitting(false);
+    
+    try {
+      const { error } = await supabase
+        .from('hazard_reports')
+        .insert({
+          hazard_type: selectedHazard,
+          description: description.trim(),
+          latitude: lat,
+          longitude: lng,
+          severity: selectedSeverity,
+          reported_by: user.id,
+          language: 'en',
+        });
 
-    toast({
-      title: "Report submitted!",
-      description: "Thank you for helping keep our coasts safe.",
-    });
+      if (error) throw error;
 
-    // Reset form
-    setSelectedHazard(null);
-    setDescription('');
-    setLocation({ lat: '', lng: '' });
-    setMediaFiles([]);
+      toast({
+        title: "Report submitted!",
+        description: "Thank you for helping keep our coasts safe.",
+      });
+
+      // Reset form
+      setSelectedHazard(null);
+      setSelectedSeverity('medium');
+      setDescription('');
+      setLocation({ lat: '', lng: '' });
+      setMediaFiles([]);
+    } catch (err) {
+      toast({
+        title: "Submission failed",
+        description: err instanceof Error ? err.message : "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -162,6 +200,32 @@ export const ReportForm = () => {
                   </button>
                 );
               })}
+            </div>
+          </div>
+
+          {/* Severity Selection */}
+          <div className="space-y-3">
+            <Label className="text-base font-semibold">
+              How severe is this hazard?
+            </Label>
+            <div className="flex flex-wrap gap-2">
+              {(['low', 'medium', 'high', 'critical'] as SeverityLevel[]).map((level) => (
+                <Button
+                  key={level}
+                  type="button"
+                  variant={selectedSeverity === level ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setSelectedSeverity(level)}
+                  className={cn(
+                    selectedSeverity === level && level === 'critical' && 'bg-destructive hover:bg-destructive/90',
+                    selectedSeverity === level && level === 'high' && 'bg-destructive hover:bg-destructive/90',
+                    selectedSeverity === level && level === 'medium' && 'bg-warning hover:bg-warning/90',
+                    selectedSeverity === level && level === 'low' && 'bg-success hover:bg-success/90'
+                  )}
+                >
+                  {level.charAt(0).toUpperCase() + level.slice(1)}
+                </Button>
+              ))}
             </div>
           </div>
 
