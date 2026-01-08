@@ -1,22 +1,45 @@
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { 
   TrendingUp, 
   TrendingDown,
   BarChart3, 
   MapPin, 
-  Clock,
   AlertTriangle,
   Activity,
-  Loader2
+  Loader2,
+  PieChart as PieChartIcon
 } from 'lucide-react';
 import { HAZARD_CONFIG, SEVERITY_CONFIG, HazardType, SeverityLevel } from '@/types/hazard';
 import { useHazardReports } from '@/hooks/useHazardReports';
 import { cn } from '@/lib/utils';
 import { Helmet } from 'react-helmet-async';
 import { useMemo } from 'react';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  LineChart,
+  Line,
+  Legend,
+  Area,
+  AreaChart
+} from 'recharts';
+
+const SEVERITY_COLORS = {
+  critical: 'hsl(0, 84%, 60%)',
+  high: 'hsl(20, 90%, 55%)',
+  medium: 'hsl(45, 93%, 47%)',
+  low: 'hsl(142, 71%, 45%)'
+};
 
 const Analysis = () => {
   const { reports, isLoading, error } = useHazardReports();
@@ -41,18 +64,7 @@ const Analysis = () => {
       severityCounts[r.severity] = (severityCounts[r.severity] || 0) + 1;
     });
 
-    // Verification status
-    const verificationCounts: Record<string, number> = {
-      pending: 0,
-      verified: 0,
-      unverified: 0,
-      false: 0
-    };
-    reports.forEach(r => {
-      verificationCounts[r.verificationStatus] = (verificationCounts[r.verificationStatus] || 0) + 1;
-    });
-
-    // Time-based analysis (last 7 days vs previous 7 days)
+    // Time-based analysis (last 7 days)
     const now = new Date();
     const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
     const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
@@ -65,6 +77,40 @@ const Analysis = () => {
       ? ((trend / lastWeekReports.length) * 100).toFixed(0) 
       : thisWeekReports.length > 0 ? '+100' : '0';
 
+    // Daily reports for line chart (last 7 days)
+    const dailyData: { date: string; reports: number; critical: number }[] = [];
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+      const dateStr = date.toLocaleDateString('en-US', { weekday: 'short' });
+      const dayStart = new Date(date.setHours(0, 0, 0, 0));
+      const dayEnd = new Date(date.setHours(23, 59, 59, 999));
+      
+      const dayReports = reports.filter(r => r.timestamp >= dayStart && r.timestamp <= dayEnd);
+      const criticalReports = dayReports.filter(r => r.severity === 'critical' || r.severity === 'high');
+      
+      dailyData.push({
+        date: dateStr,
+        reports: dayReports.length,
+        critical: criticalReports.length
+      });
+    }
+
+    // Hazard bar chart data
+    const hazardChartData = Object.entries(hazardCounts).map(([type, count]) => ({
+      name: HAZARD_CONFIG[type as HazardType]?.label || type,
+      count,
+      fill: getHazardColor(type as HazardType)
+    }));
+
+    // Severity pie chart data
+    const severityChartData = Object.entries(severityCounts)
+      .filter(([, count]) => count > 0)
+      .map(([level, count]) => ({
+        name: level.charAt(0).toUpperCase() + level.slice(1),
+        value: count,
+        color: SEVERITY_COLORS[level as SeverityLevel]
+      }));
+
     // Top hazard type
     const sortedHazards = Object.entries(hazardCounts).sort((a, b) => b[1] - a[1]);
     const topHazard = sortedHazards[0];
@@ -72,7 +118,7 @@ const Analysis = () => {
     // Critical alerts
     const criticalCount = severityCounts.critical + severityCounts.high;
 
-    // Geographic clusters (simplified - group by rounded coordinates)
+    // Geographic clusters
     const locationClusters: Record<string, number> = {};
     reports.forEach(r => {
       const key = `${r.latitude.toFixed(1)},${r.longitude.toFixed(1)}`;
@@ -83,7 +129,6 @@ const Analysis = () => {
     return {
       hazardCounts,
       severityCounts,
-      verificationCounts,
       thisWeekReports: thisWeekReports.length,
       lastWeekReports: lastWeekReports.length,
       trend,
@@ -92,7 +137,10 @@ const Analysis = () => {
       criticalCount,
       hotspotCount,
       totalReports: reports.length,
-      sortedHazards
+      sortedHazards,
+      dailyData,
+      hazardChartData,
+      severityChartData
     };
   }, [reports]);
 
@@ -199,155 +247,206 @@ const Analysis = () => {
                   </Card>
                 </div>
 
+                {/* Charts Row 1 */}
+                <div className="grid lg:grid-cols-2 gap-6 mb-6">
+                  {/* Daily Reports Line Chart */}
+                  <Card className="p-6">
+                    <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+                      <TrendingUp className="h-5 w-5 text-primary" />
+                      Reports Over Last 7 Days
+                    </h3>
+                    <div className="h-64">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart data={analytics.dailyData}>
+                          <defs>
+                            <linearGradient id="colorReports" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
+                              <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                            </linearGradient>
+                            <linearGradient id="colorCritical" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="hsl(var(--destructive))" stopOpacity={0.3}/>
+                              <stop offset="95%" stopColor="hsl(var(--destructive))" stopOpacity={0}/>
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                          <XAxis 
+                            dataKey="date" 
+                            className="text-xs fill-muted-foreground"
+                            tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                          />
+                          <YAxis 
+                            className="text-xs fill-muted-foreground"
+                            tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                          />
+                          <Tooltip 
+                            contentStyle={{ 
+                              backgroundColor: 'hsl(var(--card))',
+                              border: '1px solid hsl(var(--border))',
+                              borderRadius: '8px'
+                            }}
+                          />
+                          <Legend />
+                          <Area 
+                            type="monotone" 
+                            dataKey="reports" 
+                            stroke="hsl(var(--primary))" 
+                            fill="url(#colorReports)"
+                            name="All Reports"
+                          />
+                          <Area 
+                            type="monotone" 
+                            dataKey="critical" 
+                            stroke="hsl(var(--destructive))" 
+                            fill="url(#colorCritical)"
+                            name="Critical/High"
+                          />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </Card>
+
+                  {/* Severity Pie Chart */}
+                  <Card className="p-6">
+                    <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+                      <PieChartIcon className="h-5 w-5 text-primary" />
+                      Severity Distribution
+                    </h3>
+                    <div className="h-64">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={analytics.severityChartData}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={60}
+                            outerRadius={90}
+                            paddingAngle={4}
+                            dataKey="value"
+                            label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                          >
+                            {analytics.severityChartData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.color} />
+                            ))}
+                          </Pie>
+                          <Tooltip 
+                            contentStyle={{ 
+                              backgroundColor: 'hsl(var(--card))',
+                              border: '1px solid hsl(var(--border))',
+                              borderRadius: '8px'
+                            }}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </Card>
+                </div>
+
+                {/* Charts Row 2 */}
                 <div className="grid lg:grid-cols-2 gap-6">
-                  {/* Hazard Type Distribution */}
+                  {/* Hazard Type Bar Chart */}
                   <Card className="p-6">
                     <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
                       <Activity className="h-5 w-5 text-primary" />
                       Hazard Type Distribution
                     </h3>
-                    <div className="space-y-3">
-                      {analytics.sortedHazards.map(([type, count]) => {
-                        const config = HAZARD_CONFIG[type as HazardType];
-                        const percentage = ((count / analytics.totalReports) * 100).toFixed(0);
-                        return (
-                          <div key={type} className="flex items-center gap-3">
-                            <div className={cn(
-                              "w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0",
-                              config?.bgColor || 'bg-muted'
-                            )}>
-                              <span className="text-sm">{config?.icon || '⚠️'}</span>
-                            </div>
-                            <div className="flex-1">
-                              <div className="flex justify-between mb-1">
-                                <span className="text-sm font-medium text-foreground">
-                                  {config?.label || type}
-                                </span>
-                                <span className="text-sm text-muted-foreground">
-                                  {count} ({percentage}%)
-                                </span>
-                              </div>
-                              <div className="h-2 bg-muted rounded-full overflow-hidden">
-                                <div 
-                                  className={cn("h-full rounded-full", config?.bgColor || 'bg-primary')}
-                                  style={{ width: `${percentage}%` }}
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </Card>
-
-                  {/* Severity Breakdown */}
-                  <Card className="p-6">
-                    <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
-                      <AlertTriangle className="h-5 w-5 text-destructive" />
-                      Severity Breakdown
-                    </h3>
-                    <div className="grid grid-cols-2 gap-4">
-                      {(['critical', 'high', 'medium', 'low'] as SeverityLevel[]).map((level) => {
-                        const count = analytics.severityCounts[level];
-                        const config = SEVERITY_CONFIG[level];
-                        return (
-                          <div 
-                            key={level} 
-                            className="p-4 rounded-lg border border-border"
+                    <div className="h-72">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart 
+                          data={analytics.hazardChartData} 
+                          layout="vertical"
+                          margin={{ left: 20, right: 20 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                          <XAxis 
+                            type="number"
+                            tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                          />
+                          <YAxis 
+                            type="category" 
+                            dataKey="name" 
+                            width={100}
+                            tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+                          />
+                          <Tooltip 
+                            contentStyle={{ 
+                              backgroundColor: 'hsl(var(--card))',
+                              border: '1px solid hsl(var(--border))',
+                              borderRadius: '8px'
+                            }}
+                          />
+                          <Bar 
+                            dataKey="count" 
+                            radius={[0, 4, 4, 0]}
+                            fill="hsl(var(--primary))"
                           >
-                            <div className="flex items-center gap-2 mb-2">
-                              <div className={cn("w-3 h-3 rounded-full", config.bgColor)} />
-                              <span className="text-sm font-medium capitalize text-foreground">
-                                {level}
-                              </span>
-                            </div>
-                            <p className="text-2xl font-bold text-foreground">{count}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {analytics.totalReports > 0 
-                                ? `${((count / analytics.totalReports) * 100).toFixed(0)}% of total`
-                                : '0%'
-                              }
-                            </p>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </Card>
-
-                  {/* Verification Status */}
-                  <Card className="p-6">
-                    <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
-                      <Clock className="h-5 w-5 text-primary" />
-                      Verification Status
-                    </h3>
-                    <div className="space-y-3">
-                      {Object.entries(analytics.verificationCounts).map(([status, count]) => {
-                        const percentage = analytics.totalReports > 0 
-                          ? ((count / analytics.totalReports) * 100).toFixed(0) 
-                          : '0';
-                        return (
-                          <div key={status} className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <Badge variant={
-                                status === 'verified' ? 'default' : 
-                                status === 'pending' ? 'secondary' : 'outline'
-                              }>
-                                {status.charAt(0).toUpperCase() + status.slice(1)}
-                              </Badge>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-medium text-foreground">{count}</span>
-                              <span className="text-sm text-muted-foreground">({percentage}%)</span>
-                            </div>
-                          </div>
-                        );
-                      })}
+                            {analytics.hazardChartData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.fill} />
+                            ))}
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
                     </div>
                   </Card>
 
                   {/* Weekly Comparison */}
                   <Card className="p-6">
                     <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
-                      <TrendingUp className="h-5 w-5 text-primary" />
+                      <BarChart3 className="h-5 w-5 text-primary" />
                       Weekly Comparison
                     </h3>
-                    <div className="space-y-4">
-                      <div className="p-4 rounded-lg bg-muted/50">
-                        <p className="text-sm text-muted-foreground mb-1">This Week</p>
-                        <p className="text-3xl font-bold text-foreground">
-                          {analytics.thisWeekReports}
-                        </p>
-                        <p className="text-sm text-muted-foreground">reports submitted</p>
-                      </div>
-                      <div className="p-4 rounded-lg border border-border">
-                        <p className="text-sm text-muted-foreground mb-1">Previous Week</p>
-                        <p className="text-3xl font-bold text-foreground">
-                          {analytics.lastWeekReports}
-                        </p>
-                        <p className="text-sm text-muted-foreground">reports submitted</p>
-                      </div>
-                      {analytics.topHazard && (
-                        <div className="pt-4 border-t border-border">
-                          <p className="text-sm text-muted-foreground mb-2">Most Reported Hazard</p>
-                          <div className="flex items-center gap-2">
-                            <div className={cn(
-                              "w-8 h-8 rounded-lg flex items-center justify-center",
-                              HAZARD_CONFIG[analytics.topHazard[0] as HazardType]?.bgColor || 'bg-primary'
-                            )}>
-                              <span>{HAZARD_CONFIG[analytics.topHazard[0] as HazardType]?.icon || '⚠️'}</span>
-                            </div>
-                            <div>
-                              <p className="font-medium text-foreground">
-                                {HAZARD_CONFIG[analytics.topHazard[0] as HazardType]?.label || analytics.topHazard[0]}
-                              </p>
-                              <p className="text-sm text-muted-foreground">
-                                {analytics.topHazard[1]} reports
-                              </p>
-                            </div>
+                    <div className="h-72">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart 
+                          data={[
+                            { name: 'Previous Week', count: analytics.lastWeekReports },
+                            { name: 'This Week', count: analytics.thisWeekReports }
+                          ]}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                          <XAxis 
+                            dataKey="name"
+                            tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                          />
+                          <YAxis 
+                            tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                          />
+                          <Tooltip 
+                            contentStyle={{ 
+                              backgroundColor: 'hsl(var(--card))',
+                              border: '1px solid hsl(var(--border))',
+                              borderRadius: '8px'
+                            }}
+                          />
+                          <Bar 
+                            dataKey="count" 
+                            radius={[4, 4, 0, 0]}
+                            fill="hsl(var(--primary))"
+                          />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                    
+                    {analytics.topHazard && (
+                      <div className="mt-4 pt-4 border-t border-border">
+                        <p className="text-sm text-muted-foreground mb-2">Most Reported Hazard</p>
+                        <div className="flex items-center gap-2">
+                          <div className={cn(
+                            "w-8 h-8 rounded-lg flex items-center justify-center",
+                            HAZARD_CONFIG[analytics.topHazard[0] as HazardType]?.bgColor || 'bg-primary'
+                          )}>
+                            <span>{HAZARD_CONFIG[analytics.topHazard[0] as HazardType]?.icon || '⚠️'}</span>
+                          </div>
+                          <div>
+                            <p className="font-medium text-foreground">
+                              {HAZARD_CONFIG[analytics.topHazard[0] as HazardType]?.label || analytics.topHazard[0]}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              {analytics.topHazard[1]} reports
+                            </p>
                           </div>
                         </div>
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </Card>
                 </div>
               </>
@@ -359,5 +458,17 @@ const Analysis = () => {
     </>
   );
 };
+
+function getHazardColor(type: HazardType): string {
+  const colors: Record<HazardType, string> = {
+    tsunami: 'hsl(200, 80%, 50%)',
+    storm_surge: 'hsl(270, 70%, 55%)',
+    high_waves: 'hsl(190, 75%, 45%)',
+    coastal_flooding: 'hsl(220, 70%, 55%)',
+    abnormal_tides: 'hsl(260, 60%, 50%)',
+    coastal_damage: 'hsl(35, 90%, 50%)'
+  };
+  return colors[type] || 'hsl(var(--primary))';
+}
 
 export default Analysis;
