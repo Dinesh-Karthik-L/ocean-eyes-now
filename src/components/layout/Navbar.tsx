@@ -55,6 +55,7 @@ export const Navbar = () => {
     { name: t.nav.report, href: '/report', icon: FileText },
     { name: t.nav.dashboard, href: '/dashboard', icon: BarChart3 },
     { name: t.nav.alerts, href: '/alerts', icon: Bell },
+    { name: 'Analysis', href: '/analysis', icon: ChartLine },
   ];
 
   const handleSignOut = async () => {
