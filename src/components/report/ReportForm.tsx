@@ -12,7 +12,8 @@ import {
   Send, 
   Loader2,
   CheckCircle2,
-  Navigation
+  Navigation,
+  X
 } from 'lucide-react';
 import { HAZARD_CONFIG, HazardType, SeverityLevel } from '@/types/hazard';
 import { cn } from '@/lib/utils';
@@ -46,6 +47,7 @@ export const ReportForm = () => {
   const [isLocating, setIsLocating] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [mediaFiles, setMediaFiles] = useState<File[]>([]);
+  const [mediaPreviews, setMediaPreviews] = useState<string[]>([]);
 
   const handleGetLocation = () => {
     setIsLocating(true);
@@ -83,8 +85,51 @@ export const ReportForm = () => {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      setMediaFiles(Array.from(e.target.files));
+      const files = Array.from(e.target.files);
+      setMediaFiles(prev => [...prev, ...files]);
+      
+      // Create preview URLs
+      files.forEach(file => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setMediaPreviews(prev => [...prev, reader.result as string]);
+        };
+        reader.readAsDataURL(file);
+      });
     }
+  };
+
+  const removeFile = (index: number) => {
+    setMediaFiles(prev => prev.filter((_, i) => i !== index));
+    setMediaPreviews(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const uploadMedia = async (): Promise<string[]> => {
+    if (!user || mediaFiles.length === 0) return [];
+    
+    const urls: string[] = [];
+    
+    for (const file of mediaFiles) {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+      
+      const { error, data } = await supabase.storage
+        .from('hazard-media')
+        .upload(fileName, file);
+      
+      if (error) {
+        console.error('Upload error:', error);
+        continue;
+      }
+      
+      const { data: urlData } = supabase.storage
+        .from('hazard-media')
+        .getPublicUrl(fileName);
+      
+      urls.push(urlData.publicUrl);
+    }
+    
+    return urls;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -113,6 +158,9 @@ export const ReportForm = () => {
     setIsSubmitting(true);
     
     try {
+      // Upload media files first
+      const mediaUrls = await uploadMedia();
+      
       const { error } = await supabase
         .from('hazard_reports')
         .insert({
@@ -123,6 +171,7 @@ export const ReportForm = () => {
           severity: selectedSeverity,
           reported_by: user.id,
           language: 'en',
+          media_urls: mediaUrls.length > 0 ? mediaUrls : null,
         });
 
       if (error) throw error;
@@ -138,6 +187,7 @@ export const ReportForm = () => {
       setDescription('');
       setLocation({ lat: '', lng: '' });
       setMediaFiles([]);
+      setMediaPreviews([]);
     } catch (err) {
       toast({
         title: "Submission failed",
@@ -318,8 +368,28 @@ export const ReportForm = () => {
                 </div>
               </label>
             </div>
+            {mediaPreviews.length > 0 && (
+              <div className="grid grid-cols-3 gap-2 mt-3">
+                {mediaPreviews.map((preview, i) => (
+                  <div key={i} className="relative group">
+                    <img 
+                      src={preview} 
+                      alt={`Preview ${i + 1}`}
+                      className="w-full h-20 object-cover rounded-lg border border-border"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeFile(i)}
+                      className="absolute top-1 right-1 w-5 h-5 bg-destructive text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
             {mediaFiles.length > 0 && (
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2 mt-2">
                 {mediaFiles.map((file, i) => (
                   <Badge key={i} variant="secondary" className="gap-1">
                     <Upload className="h-3 w-3" />

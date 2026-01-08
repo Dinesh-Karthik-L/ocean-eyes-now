@@ -11,6 +11,7 @@ import Map from "./pages/Map";
 import Report from "./pages/Report";
 import Dashboard from "./pages/Dashboard";
 import Alerts from "./pages/Alerts";
+import Analysis from "./pages/Analysis";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 
@@ -31,6 +32,7 @@ const App = () => (
                 <Route path="/report" element={<Report />} />
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/alerts" element={<Alerts />} />
+                <Route path="/analysis" element={<Analysis />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>

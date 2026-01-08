@@ -11,7 +11,8 @@ import {
   ChevronRight,
   BellOff,
   Settings,
-  Loader2
+  Loader2,
+  Image as ImageIcon
 } from 'lucide-react';
 import { SEVERITY_CONFIG, HAZARD_CONFIG } from '@/types/hazard';
 import { mockHotspots } from '@/data/mockData';
@@ -178,6 +179,24 @@ const Alerts = () => {
                           <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
                             {report.description}
                           </p>
+                          
+                          {/* Display media images */}
+                          {report.mediaUrls && report.mediaUrls.length > 0 && (
+                            <div className="flex gap-2 mb-2 overflow-x-auto">
+                              {report.mediaUrls.map((url, idx) => (
+                                <img
+                                  key={idx}
+                                  src={url}
+                                  alt={`Report media ${idx + 1}`}
+                                  className="w-16 h-16 object-cover rounded-lg border border-border flex-shrink-0"
+                                  onError={(e) => {
+                                    (e.target as HTMLImageElement).style.display = 'none';
+                                  }}
+                                />
+                              ))}
+                            </div>
+                          )}
+                          
                           <div className="flex items-center gap-3 text-xs text-muted-foreground">
                             <span className="flex items-center gap-1">
                               <Clock className="h-3 w-3" />
@@ -187,6 +206,12 @@ const Alerts = () => {
                               <MapPin className="h-3 w-3" />
                               {report.latitude.toFixed(2)}, {report.longitude.toFixed(2)}
                             </span>
+                            {report.mediaUrls && report.mediaUrls.length > 0 && (
+                              <span className="flex items-center gap-1">
+                                <ImageIcon className="h-3 w-3" />
+                                {report.mediaUrls.length} image{report.mediaUrls.length > 1 ? 's' : ''}
+                              </span>
+                            )}
                           </div>
                         </div>
                       </div>
