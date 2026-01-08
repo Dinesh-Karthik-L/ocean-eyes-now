@@ -25,7 +25,7 @@ import {
   DamageIcon,
 } from '@/components/icons/HazardIcons';
 
-const GOOGLE_MAPS_API_KEY = 'AIzaSyCRZP6UzA8n9o8_U6Qgpmu_gOUXNPCBm3M';
+const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '';
 
 const hazardIcons: Record<HazardType, React.ComponentType<{ className?: string; size?: number }>> = {
   tsunami: TsunamiIcon,
