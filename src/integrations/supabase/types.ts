@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      hazard_reports: {
+        Row: {
+          created_at: string
+          description: string
+          hazard_type: string
+          id: string
+          language: string | null
+          latitude: number
+          longitude: number
+          media_urls: string[] | null
+          reported_by: string | null
+          severity: string
+          updated_at: string
+          verification_status: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          hazard_type: string
+          id?: string
+          language?: string | null
+          latitude: number
+          longitude: number
+          media_urls?: string[] | null
+          reported_by?: string | null
+          severity?: string
+          updated_at?: string
+          verification_status?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          hazard_type?: string
+          id?: string
+          language?: string | null
+          latitude?: number
+          longitude?: number
+          media_urls?: string[] | null
+          reported_by?: string | null
+          severity?: string
+          updated_at?: string
+          verification_status?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
